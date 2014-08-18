@@ -1989,7 +1989,7 @@ function upgrade_save_orphaned_questions() {
 function upgrade_rename_old_backup_files_using_shortname() {
     global $CFG;
     $dir = get_config('backup', 'backup_auto_destination');
-    $useshortname = get_config('backup', 'backup_shortname');
+    $useshortname = get_config('backup', 'backup_filename');
     if (empty($dir) || !is_dir($dir) || !is_writable($dir)) {
         return;
     }
@@ -2045,8 +2045,10 @@ function upgrade_rename_old_backup_files_using_shortname() {
         // Generating the file name manually. We do not use backup_plan_dbops::get_default_backup_filename() because
         // it will query the database to get some course information, and the course could not exist any more.
         $newname = $filename . $bcinfo->original_course_id . '-';
-        if ($useshortname) {
-            $shortname = str_replace(' ', '_', $bcinfo->original_course_shortname);
+        $usingcoursename = $useshortname == 1 || $useshortname == 2;
+        if ($usingcoursename) {
+            $fieldname = ($useshortname == 1) ? 'original_course_shortname' : 'original_course_fullname';
+            $shortname = str_replace(' ', '_', $bcinfo->$fieldname);
             $shortname = textlib::strtolower(trim(clean_filename($shortname), '_'));
             $newname .= $shortname . '-';
         }
