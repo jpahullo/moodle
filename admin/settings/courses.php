@@ -169,7 +169,12 @@ if ($hassiteconfig
         400 => '400',
         500 => '500');
     $temp->add(new admin_setting_configselect('backup/backup_auto_keep', new lang_string('keep'), new lang_string('backupkeephelp'), 1, $keepoptoins));
-    $temp->add(new admin_setting_configcheckbox('backup/backup_shortname', new lang_string('backup_shortname', 'admin'), new lang_string('backup_shortnamehelp', 'admin'), 0));
+    $courseNameOptions = array(
+        0 => 'Id',
+        1 => new lang_string('shortname'),
+        2 => new lang_string('fullname'),
+    );
+    $temp->add(new admin_setting_configselect('backup/backup_filename', new lang_string('backup_filename', 'admin'), new lang_string('backup_filenamehelp', 'admin'), 0, $courseNameOptions));
     $temp->add(new admin_setting_configcheckbox('backup/backup_auto_skip_hidden', new lang_string('skiphidden', 'backup'), new lang_string('skiphiddenhelp', 'backup'), 1));
     $temp->add(new admin_setting_configselect('backup/backup_auto_skip_modif_days', new lang_string('skipmodifdays', 'backup'), new lang_string('skipmodifdayshelp', 'backup'), 30, array(
         0 => new lang_string('never'),

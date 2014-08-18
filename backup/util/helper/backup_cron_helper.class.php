@@ -428,7 +428,7 @@ abstract class backup_cron_automated_helper {
             // Copy file only if there was no error.
             if ($file && !empty($dir) && $storage !== 0 && $outcome != self::BACKUP_STATUS_ERROR) {
                 $filename = backup_plan_dbops::get_default_backup_filename($format, $type, $course->id, $users, $anonymised,
-                        !$config->backup_shortname);
+                        $config->backup_filename);
                 if (!$file->copy_content_to($dir.'/'.$filename)) {
                     $outcome = self::BACKUP_STATUS_ERROR;
                 }
