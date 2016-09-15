@@ -41,6 +41,10 @@ function xmldb_qtype_multianswer_upgrade($oldversion) {
     // Moodle v2.3.0 release upgrade line
     // Put any upgrade step following this.
 
+    if ($oldversion < 2012061700) {
+        xmldb_qtype_multianswer_upgrade_sequence_to_text($dbman, 2012062500);
+    }
+
     // Moodle v2.4.0 release upgrade line
     // Put any upgrade step following this.
 
@@ -145,4 +149,22 @@ function xmldb_qtype_multianswer_upgrade($oldversion) {
     // Put any upgrade step following this.
 
     return true;
+}
+
+/**
+ * Updates the sequence column to text data type.
+ * @param database_manager $dbman
+ * @param int $version plugin version.
+ */
+function xmldb_qtype_multianswer_upgrade_sequence_to_text($dbman, $version)
+{
+    // Changing type of field sequence on table question_multianswer to text.
+    $table = new xmldb_table('question_multianswer');
+    $field = new xmldb_field('sequence', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL, null, null, 'question');
+
+    // Launch change of type for field sequence.
+    $dbman->change_field_type($table, $field);
+
+    // Multianswer savepoint reached.
+    upgrade_plugin_savepoint(true, $version, 'qtype', 'multianswer');
 }
