@@ -536,8 +536,6 @@ class pdf extends TcpdfFpdi {
      * @return string the filename of the generated image
      */
     public function get_image($pageno) {
-        global $CFG;
-
         if (!$this->filename) {
             throw new \coding_exception('Attempting to generate a page image without first setting the PDF filename');
         }
@@ -560,15 +558,7 @@ class pdf extends TcpdfFpdi {
         }
 
         if ($generate) {
-            // Use ghostscript to generate an image of the specified page.
-            $gsexec = \escapeshellarg($CFG->pathtogs);
-            $imageres = \escapeshellarg(100);
-            $imagefilearg = \escapeshellarg($imagefile);
-            $filename = \escapeshellarg($this->filename);
-            $pagenoinc = \escapeshellarg($pageno + 1);
-            $command = "$gsexec -q -sDEVICE=png16m -dSAFER -dBATCH -dNOPAUSE -r$imageres -dFirstPage=$pagenoinc -dLastPage=$pagenoinc ".
-                "-dDOINTERPOLATE -dGraphicsAlphaBits=4 -dTextAlphaBits=4 -sOutputFile=$imagefilearg $filename";
-
+            $command = $this->get_command_for_image($pageno, $imagefile);
             $output = null;
             $result = exec($command, $output);
             if (!file_exists($imagefile)) {
@@ -583,6 +573,40 @@ class pdf extends TcpdfFpdi {
         }
 
         return self::IMAGE_PAGE . $pageno . '.png';
+    }
+
+    private function get_command_for_image(int $pageno, string $imagefile): string {
+        global $CFG;
+
+        // First, quickest convertion option.
+        if (!empty($CFG->pathtopdftoppm)) {
+            return $this->get_pdftoppm_command_for_image($pageno, $imagefile);
+        }
+
+        // Otherwise, rely on default behaviour.
+        return $this->get_gs_command_for_image($pageno, $imagefile);
+    }
+
+    private function get_pdftoppm_command_for_image(int $pageno, string $imagefile): string {
+        global $CFG;
+        $pdftoppmexec = \escapeshellarg($CFG->pathtopdftoppm);
+        $imageres = \escapeshellarg(100);
+        $imagefile = substr($imagefile, 0, -4); // Pdftoppm tool automatically adds extension file.
+        $imagefilearg = \escapeshellarg($imagefile);
+        $filename = \escapeshellarg($this->filename);
+        $pagenoinc = \escapeshellarg($pageno + 1);
+        return "$pdftoppmexec -q -r $imageres -f $pagenoinc -l $pagenoinc -png -singlefile $filename $imagefilearg";
+    }
+
+    private function get_gs_command_for_image(int $pageno, string $imagefile): string {
+        global $CFG;
+        $gsexec = \escapeshellarg($CFG->pathtogs);
+        $imageres = \escapeshellarg(100);
+        $imagefilearg = \escapeshellarg($imagefile);
+        $filename = \escapeshellarg($this->filename);
+        $pagenoinc = \escapeshellarg($pageno + 1);
+        return "$gsexec -q -sDEVICE=png16m -dSAFER -dBATCH -dNOPAUSE -r$imageres -dFirstPage=$pagenoinc -dLastPage=$pagenoinc ".
+            "-dDOINTERPOLATE -dGraphicsAlphaBits=4 -dTextAlphaBits=4 -sOutputFile=$imagefilearg $filename";
     }
 
     /**
