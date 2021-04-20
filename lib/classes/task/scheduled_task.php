@@ -144,6 +144,23 @@ abstract class scheduled_task extends task_base {
     }
 
     /**
+     * Informs whether the minute field is valid.
+     * Have to be called after the method set_minute(string).
+     * @return bool true if minute field is valid. false otherwise.
+     */
+    public function is_minute_valid(): bool {
+        return !empty($this->get_valid_minutes());
+    }
+
+    /**
+     * Calculates the list of valid minutes according to the given expression.
+     * @return array(int) list of matching minutes.
+     */
+    private function get_valid_minutes(): array {
+        return $this->eval_cron_field($this->minute, self::MINUTEMIN, self::MINUTEMAX);
+    }
+
+    /**
      * Setter for $hour. Accepts a special 'R' value
      * which will be translated to a random hour.
      * @param string $hour
@@ -166,6 +183,23 @@ abstract class scheduled_task extends task_base {
     }
 
     /**
+     * Informs whether the hour field is valid.
+     * Have to be called after the method set_hour(string).
+     * @return bool true if hour field is valid. false otherwise.
+     */
+    public function is_hour_valid(): bool {
+        return !empty($this->get_valid_hours());
+    }
+
+    /**
+     * Calculates the list of valid hours according to the given expression.
+     * @return array(int) list of matching hours.
+     */
+    private function get_valid_hours(): array {
+        return $this->eval_cron_field($this->hour, self::HOURMIN, self::HOURMAX);
+    }
+
+    /**
      * Setter for $month.
      * @param string $month
      */
@@ -182,6 +216,23 @@ abstract class scheduled_task extends task_base {
     }
 
     /**
+     * Informs whether the month field is valid.
+     * Have to be called after the method set_month(string).
+     * @return bool true if month field is valid. false otherwise.
+     */
+    public function is_month_valid(): bool {
+        return !empty($this->get_valid_months());
+    }
+
+    /**
+     * Calculates the list of valid months according to the given expression.
+     * @return array(int) list of matching months.
+     */
+    private function get_valid_months(): array {
+        return $this->eval_cron_field($this->month, 1, 12);
+    }
+
+    /**
      * Setter for $day.
      * @param string $day
      */
@@ -195,6 +246,24 @@ abstract class scheduled_task extends task_base {
      */
     public function get_day() {
         return $this->day;
+    }
+
+    /**
+     * Informs whether the day field is valid.
+     * Have to be called after the method set_day(string).
+     * @return bool true if day field is valid. false otherwise.
+     */
+    public function is_day_valid(): bool {
+        return !empty($this->get_valid_days());
+    }
+
+    /**
+     * Calculates the list of valid days according to the given expression.
+     * @return array(int) list of matching days.
+     */
+    private function get_valid_days(): array {
+        $daysinmonth = date('t');
+        return $this->eval_cron_field($this->day, 1, $daysinmonth);
     }
 
     /**
@@ -216,6 +285,23 @@ abstract class scheduled_task extends task_base {
      */
     public function get_day_of_week() {
         return $this->dayofweek;
+    }
+
+    /**
+     * Informs whether the day_of_week field is valid.
+     * Have to be called after the method set_day_of_week(string).
+     * @return bool true if day_of_week field is valid. false otherwise.
+     */
+    public function is_day_of_week_valid(): bool {
+        return !empty($this->get_valid_day_of_weeks());
+    }
+
+    /**
+     * Calculates the list of valid day_of_weeks according to the given expression.
+     * @return array(int) list of matching day_of_week.
+     */
+    private function get_valid_day_of_weeks(): array {
+        return $this->eval_cron_field($this->dayofweek, 0, 7);
     }
 
     /**
@@ -351,18 +437,16 @@ abstract class scheduled_task extends task_base {
      * @return int $nextruntime.
      */
     public function get_next_scheduled_time() {
-        global $CFG;
-
-        $validminutes = $this->eval_cron_field($this->minute, self::MINUTEMIN, self::MINUTEMAX);
-        $validhours = $this->eval_cron_field($this->hour, self::HOURMIN, self::HOURMAX);
+        $validminutes = $this->get_valid_minutes();
+        $validhours = $this->get_valid_hours();
 
         // We need to change to the server timezone before using php date() functions.
         \core_date::set_default_server_timezone();
 
-        $daysinmonth = date("t");
-        $validdays = $this->eval_cron_field($this->day, 1, $daysinmonth);
-        $validdaysofweek = $this->eval_cron_field($this->dayofweek, 0, 7);
-        $validmonths = $this->eval_cron_field($this->month, 1, 12);
+        $validdays = $this->get_valid_days();
+        $validdaysofweek = $this->get_valid_day_of_weeks();
+        $validmonths = $this->get_valid_months();
+
         $nextvalidyear = date('Y');
 
         $currentminute = date("i") + 1;
@@ -383,6 +467,7 @@ abstract class scheduled_task extends task_base {
         $nextvaliddayofmonth = $this->next_in_list($currentday, $validdays);
         $nextvaliddayofweek = $this->next_in_list($currentdayofweek, $validdaysofweek);
         $daysincrementbymonth = $nextvaliddayofmonth - $currentday;
+        $daysinmonth = date('t');
         if ($nextvaliddayofmonth < $currentday) {
             $daysincrementbymonth += $daysinmonth;
         }
@@ -434,6 +519,6 @@ abstract class scheduled_task extends task_base {
      *
      * @return string
      */
-    public abstract function get_name();
+    abstract public function get_name();
 
 }
